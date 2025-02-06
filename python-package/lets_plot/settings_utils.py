@@ -12,21 +12,29 @@ __all__ = ['maptiles_zxy', 'maptiles_lets_plot', 'maptiles_solid']
 
 def maptiles_lets_plot(url: str = None, theme: str = None) -> dict:
     """
-    Makes vector tiles config. Can be used individually in `geom_livemap()`
+    Make vector tiles config. Can be used individually in `geom_livemap()`
     or in every livemap via `LetsPlot.set()`.
 
     Parameters
     ----------
     url : str
-        Address of the tile server. Can be ommited if URL is already set in global settings.
+        Address of the tile server. Can be omitted if URL is already set in global settings.
 
-    theme : {'color', 'light', 'dark'}
+    theme : {'color', 'light', 'dark', 'bw'}
         Tiles theme.
 
     Returns
     -------
     dict
         Tile provider settings.
+
+    Notes
+    -----
+    If you are using Safari and having trouble loading tiles, try disabling the NSURLSession Websocket feature.
+    Go to `Develop -> Experimental Features -> NSURLSession Websocket` to turn it off.
+
+    Also, you could use raster tiles from `lets_plot.tilesets`, e.g.
+    `ggplot() + geom_livemap(tiles=tilesets.OPEN_TOPO_MAP)`
 
     Examples
     --------
@@ -78,7 +86,7 @@ def maptiles_lets_plot(url: str = None, theme: str = None) -> dict:
 def maptiles_zxy(url: str, attribution: str = None, min_zoom: int = None, max_zoom: int = None, subdomains: str = None,
                  **other_args) -> dict:
     """
-    Makes raster tiles config. Can be used individually in `geom_livemap()`
+    Make raster tiles config. Can be used individually in `geom_livemap()`
     or in every livemap via `LetsPlot.set()`.
 
     Parameters
@@ -140,7 +148,7 @@ def maptiles_zxy(url: str, attribution: str = None, min_zoom: int = None, max_zo
     return {
         MAPTILES_KIND: TILES_RASTER_ZXY,
         MAPTILES_URL: url,
-        MAPTILES_ATTRIBUTION: attribution,
+        MAPTILES_ATTRIBUTION: _build_attribution(attribution),
         MAPTILES_MIN_ZOOM: min_zoom,
         MAPTILES_MAX_ZOOM: max_zoom
     }
@@ -148,7 +156,7 @@ def maptiles_zxy(url: str, attribution: str = None, min_zoom: int = None, max_zo
 
 def maptiles_solid(color: str):
     """
-    Makes solid color tiles config. Can be used individually in `geom_livemap()`
+    Make solid color tiles config. Can be used individually in `geom_livemap()`
     or in every livemap via `LetsPlot.set()`.
 
     Parameters
@@ -183,7 +191,7 @@ def maptiles_solid(color: str):
 
 def maptiles_chessboard():
     """
-    Makes solid color tiles with chessboard pattern. Can be used individually in `geom_livemap()`
+    Make solid color tiles with chessboard pattern. Can be used individually in `geom_livemap()`
     or in every livemap via `LetsPlot.set()`.
 
     Returns
@@ -209,7 +217,7 @@ def maptiles_chessboard():
 
 def geocoding_service(url: str):
     """
-    Makes geocoding service config.
+    Make geocoding service config.
     Can be applied via LetsPlot.set(...)
 
     Parameters
@@ -226,3 +234,11 @@ def geocoding_service(url: str):
     return {
         GEOCODING_PROVIDER_URL: url
     }
+
+
+def _build_attribution(other_attributions):
+    map_attribution = '<a href="https://lets-plot.org">\u00a9 Lets-Plot</a>'
+    if other_attributions is None:
+        return map_attribution
+    else:
+        return map_attribution + ', ' + other_attributions

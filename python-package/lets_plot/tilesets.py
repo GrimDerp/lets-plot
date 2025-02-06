@@ -57,6 +57,22 @@ Examples
 
 """
 
+LETS_PLOT_BW = _maptiles_lets_plot(theme='bw')
+"""
+Vector tiles, BW theme.
+
+Examples
+--------
+.. jupyter-execute::
+    :linenos:
+    :emphasize-lines: 4
+
+    from lets_plot import *
+    from lets_plot import tilesets
+    LetsPlot.setup_html()
+    ggplot() + geom_livemap(tiles=tilesets.LETS_PLOT_BW)
+
+"""
 
 SOLID = _maptiles_solid('#FFFFFF')
 """
@@ -78,7 +94,7 @@ Examples
 
 OSM = _maptiles_zxy(
     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution='<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
+    attribution='map data: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
     min_zoom=1, max_zoom=19, subdomains='abc'
 )
 """
@@ -99,7 +115,7 @@ Examples
 
 OPEN_TOPO_MAP = _maptiles_zxy(
     url="https://tile.opentopomap.org/{z}/{x}/{y}.png",
-    attribution='Map data: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, <a href="http://viewfinderpanoramas.org/">SRTM</a> | map style: <a href="https://opentopomap.org/">© OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>) ',
+    attribution='map data: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, <a href="http://viewfinderpanoramas.org/">SRTM</a> | map style: <a href="https://opentopomap.org/">© OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>) ',
     min_zoom=1, max_zoom=16
 )
 """
@@ -119,197 +135,19 @@ Examples
 """
 
 
-def _stamen_tiles(tileset, data_license, max_zoom, lowres_only=False):
-    if data_license == 'osm':
-        attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
-    elif data_license == 'cc':
-        attribution = 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.'
-    else:
-        raise ValueError("Unknown data license: {}. Expected 'osm' or 'cc'".format(data_license))
-
-    def build_stamen_tiles_config(hi_res=""):
-        return _maptiles_zxy(
-            "https://stamen-tiles-{{s}}.a.ssl.fastly.net/{tileset}/{{z}}/{{x}}/{{y}}{hi_res}.png".format(tileset=tileset, hi_res=hi_res),
-            attribution,
-            min_zoom=1, max_zoom=max_zoom, subdomains='abcd'
-        )
-
-    if lowres_only:
-        return build_stamen_tiles_config()
-
-    return build_stamen_tiles_config(), build_stamen_tiles_config(hi_res="@2x")
-
-
-STAMEN_DESIGN_TONER, STAMEN_DESIGN_TONER_HIRES = _stamen_tiles('toner', data_license='osm', max_zoom=20)
-"""
-Stamen design, toner theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_HIRES)
-
-"""
-
-STAMEN_DESIGN_TONER_LIGHT, STAMEN_DESIGN_TONER_LIGHT_HIRES = _stamen_tiles('toner-lite', data_license='osm', max_zoom=20)
-"""
-Stamen design, toner lite theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_LIGHT)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_LIGHT_HIRES)
-
-"""
-
-STAMEN_DESIGN_TONER_HYBRID, STAMEN_DESIGN_TONER_HYBRID_HIRES = _stamen_tiles('toner-hybrid', data_license='osm', max_zoom=20)
-"""
-Stamen design, toner hybrid theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_HYBRID)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_HYBRID_HIRES)
-
-"""
-
-STAMEN_DESIGN_TONER_LABELS, STAMEN_DESIGN_TONER_LABELS_HIRES = _stamen_tiles('toner-labels', data_license='osm', max_zoom=20)
-"""
-Stamen design, toner labels theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_LABELS)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TONER_LABELS_HIRES)
-
-"""
-
-STAMEN_DESIGN_TERRAIN, STAMEN_DESIGN_TERRAIN_HIRES = _stamen_tiles('terrain', data_license='osm', max_zoom=18)
-"""
-Stamen design, terrain theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TERRAIN)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_TERRAIN_HIRES)
-
-"""
-
-STAMEN_DESIGN_WATERCOLOR = _stamen_tiles('watercolor', data_license='cc', max_zoom=18, lowres_only=True)
-"""
-Stamen design, watercolor theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.STAMEN_DESIGN_WATERCOLOR)
-
-"""
-
-
 def _carto_tiles(tileset, cdn):
     def build_carto_tiles_config(hi_res=''):
         if cdn == 'carto':
             base_url = "https://{{s}}.basemaps.cartocdn.com/rastertiles/{tileset}/{{z}}/{{x}}/{{y}}{hi_res}.png"
         elif cdn == 'fastly':
+            # TODO: remove this branch in future releases
             base_url = "https://cartocdn_{{s}}.global.ssl.fastly.net/{tileset}/{{z}}/{{x}}/{{y}}{hi_res}.png"
         else:
             raise ValueError("Unknown carto cdn: {}. Expected 'carto' or 'fastly'.".format(cdn))
 
         return _maptiles_zxy(
             base_url.format(tileset=tileset, hi_res=hi_res),
-            '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a> <a href="https://carto.com/attributions#basemaps">© CARTO</a>, <a href="https://carto.com/attributions">© CARTO</a>',
+            'map data: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a> <a href="https://carto.com/attributions#basemaps">© CARTO</a>, <a href="https://carto.com/attributions">© CARTO</a>',
             min_zoom=1, max_zoom=20, subdomains='abc'
         )
 
@@ -430,85 +268,19 @@ Examples
 
 CARTO_MIDNIGHT_COMMANDER, CARTO_MIDNIGHT_COMMANDER_HIRES = _carto_tiles('base-midnight', cdn='fastly')
 """
-CARTO tiles, midnight commander theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_MIDNIGHT_COMMANDER)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_MIDNIGHT_COMMANDER_HIRES)
+The tileset is deprecated and will be removed in future releases.
 
 """
 
 CARTO_ANTIQUE, CARTO_ANTIQUE_HIRES = _carto_tiles('base-antique', cdn='fastly')
 """
-CARTO tiles, antique theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_ANTIQUE)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_ANTIQUE_HIRES)
+The tileset is deprecated and will be removed in future releases.
 
 """
 
 CARTO_FLAT_BLUE, CARTO_FLAT_BLUE_HIRES = _carto_tiles('base-flatblue', cdn='fastly')
 """
-CARTO tiles, flat blue theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_FLAT_BLUE)
-
-|
-
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.CARTO_FLAT_BLUE_HIRES)
+The tileset is deprecated and will be removed in future releases.
 
 """
 
@@ -518,7 +290,7 @@ def _nasa_tiles(tileset, max_zoom, time=''):
     return _maptiles_zxy(
         url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{tileset}/default/{time}/GoogleMapsCompatible_Level{max_zoom}/{{z}}/{{y}}/{{x}}.jpg" \
             .format(tileset=tileset, time=time, max_zoom=max_zoom),
-        attribution='<a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">© NASA Global Imagery Browse Services (GIBS)</a>',
+        attribution='map data: <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">© NASA Global Imagery Browse Services (GIBS)</a>',
         min_zoom=1, max_zoom=max_zoom
     )
 
@@ -537,23 +309,6 @@ Examples
     from lets_plot import tilesets
     LetsPlot.setup_html()
     ggplot() + geom_livemap(tiles=tilesets.NASA_CITYLIGHTS_2012)
-
-"""
-
-NASA_BLUEMARBLE_NEXTGENERATION = _nasa_tiles('BlueMarble_NextGeneration', max_zoom=8)
-"""
-NASA tiles, BlueMarble NextGeneration theme.
-
-Examples
---------
-.. jupyter-execute::
-    :linenos:
-    :emphasize-lines: 4
-
-    from lets_plot import *
-    from lets_plot import tilesets
-    LetsPlot.setup_html()
-    ggplot() + geom_livemap(tiles=tilesets.NASA_BLUEMARBLE_NEXTGENERATION)
 
 """
 

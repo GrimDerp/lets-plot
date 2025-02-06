@@ -29,3 +29,11 @@ The color map `twilight` was created by Bastian Bechtold ([@bastibe](https://git
 
 ### Palettable
 Copyright (c) 2019 Matt Davis. Licensed under MIT License.
+
+### CairoSVG
+A free software, distributed under the LGPL-3.0 license : [documentation](https://cairosvg.org/documentation/).
+
+### PNGJ: Java library for PNG encoding.
+Copyright (c) 2009-2012, Hernán J. González.
+Licensed under the Apache Software License, Version 2.0.
+

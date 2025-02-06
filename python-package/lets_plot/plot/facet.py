@@ -10,9 +10,11 @@ from .core import FeatureSpec
 __all__ = ['facet_grid', 'facet_wrap']
 
 
-def facet_grid(x=None, y=None, *, scales=None, x_order=1, y_order=1, x_format=None, y_format=None):
+def facet_grid(x=None, y=None, *, scales=None, x_order=1, y_order=1,
+               x_format=None, y_format=None,
+               x_labwidth=None, y_labwidth=None):
     """
-    Splits data by one or two faceting variables.
+    Split data by one or two faceting variables.
     For each data subset creates a plot panel and lays out panels as grid.
     The grid columns are defined by X faceting variable and rows are defined by Y faceting variable.
 
@@ -23,17 +25,25 @@ def facet_grid(x=None, y=None, *, scales=None, x_order=1, y_order=1, x_format=No
     y : str
         Variable name which defines rows of the facet grid.
     scales : str
-        Specifies whether scales are shared across all facets.
+        Specify whether scales are shared across all facets.
         'fixed' - shared (the default), 'free' - vary across both rows and columns,
         'free_x' or 'free_y' - vary across rows or columns respectively.
     x_order : int, default=1
-        Specifies ordering direction of columns. 1 - ascending, -1 - descending, 0 - no ordering.
+        Specify ordering direction of columns. 1 - ascending, -1 - descending, 0 - no ordering.
     y_order : int, default=1
-        Specifies ordering direction of rows. 1 - ascending, -1 - descending, 0 - no ordering.
+        Specify ordering direction of rows. 1 - ascending, -1 - descending, 0 - no ordering.
     x_format : str
-        Specifies the format pattern for displaying faceting values in columns.
+        Specify the format pattern for displaying faceting values in columns.
     y_format : str
-        Specifies the format pattern for displaying faceting values in rows.
+        Specify the format pattern for displaying faceting values in rows.
+    x_labwidth : int, default=None
+        The maximum label length (in characters) before a line breaking is applied.
+        If the original facet label already contains `\\\\n` as a text separator, it splits at those points first,
+        then wraps each part according to `x_labwidth`.
+    y_labwidth : int, default=None
+        The maximum label length (in characters) before a line breaking is applied.
+        If the original facet label already contains `\\\\n` as a text separator, it splits at those points first,
+        then wraps each part according to `y_labwidth`.
 
     Returns
     -------
@@ -52,7 +62,7 @@ def facet_grid(x=None, y=None, *, scales=None, x_order=1, y_order=1, x_format=No
     - 'Score: {.2f}' -> 'Score: 12.45',
     - 'Score: {}' -> 'Score: 12.454789'.
 
-    For more info see https://lets-plot.org/pages/formats.html.
+    For more info see `Formatting <https://lets-plot.org/python/pages/formats.html>`__.
 
     Examples
     --------
@@ -93,12 +103,13 @@ def facet_grid(x=None, y=None, *, scales=None, x_order=1, y_order=1, x_format=No
                   x=x, y=y,
                   scales=scales,
                   x_order=x_order, y_order=y_order,
-                  x_format=x_format, y_format=y_format)
+                  x_format=x_format, y_format=y_format,
+                  x_labwidth=x_labwidth, y_labwidth=y_labwidth)
 
 
-def facet_wrap(facets, ncol=None, nrow=None, *, scales=None, order=1, format=None, dir="h"):
+def facet_wrap(facets, ncol=None, nrow=None, *, scales=None, order=1, format=None, dir="h", labwidth=None):
     """
-    Splits data by one or more faceting variables.
+    Split data by one or more faceting variables.
     For each data subset creates a plot panel and lays out panels
     according to the `ncol`, `nrow` and `dir` settings.
 
@@ -111,17 +122,22 @@ def facet_wrap(facets, ncol=None, nrow=None, *, scales=None, order=1, format=Non
     nrow : int
         Number of rows.
     scales : str
-        Specifies whether scales are shared across all facets.
+        Specify whether scales are shared across all facets.
         'fixed' - shared (the default), 'free' - vary across both rows and columns,
         'free_x' or 'free_y' - vary across rows or columns respectively.
     order : int or list, default=1
-        Specifies ordering direction panels. 1 - ascending, -1 - descending, 0 - no ordering.
+        Specify ordering direction panels. 1 - ascending, -1 - descending, 0 - no ordering.
         When a list is given, then values in the list are positionally matched to variables in `facets`.
     format : str or list
-        Specifies the format pattern for displaying faceting values.
+        Specify the format pattern for displaying faceting values.
         The `format` values are positionally matched to variables in `facets`.
     dir : {'h', 'v'}, default='h'
-        Direction: either 'h' for horizontal, or 'v', for vertical.
+        Direction: either 'h' for horizontal, or 'v' for vertical.
+    labwidth : int or list
+        The maximum label length (in characters) before a line breaking is applied.
+        If the original facet label already contains `\\\\n` as a text separator, it splits at those points first,
+        then wraps each part according to `labwidth`.
+
 
     Returns
     -------
@@ -139,7 +155,7 @@ def facet_wrap(facets, ncol=None, nrow=None, *, scales=None, order=1, format=Non
     - 'Score: {.2f}' -> 'Score: 12.45',
     - 'Score: {}' -> 'Score: 12.454789'.
 
-    For more info see https://lets-plot.org/pages/formats.html.
+    For more info see `Formatting <https://lets-plot.org/python/pages/formats.html>`__.
 
     Examples
     --------
@@ -182,7 +198,8 @@ def facet_wrap(facets, ncol=None, nrow=None, *, scales=None, order=1, format=Non
                   scales=scales,
                   order=order,
                   format=format,
-                  dir=dir)
+                  dir=dir,
+                  labwidth=labwidth)
 
 
 def _facet(name, **kwargs):

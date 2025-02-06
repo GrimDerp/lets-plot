@@ -1,14 +1,16 @@
 #  Copyright (c) 2022. JetBrains s.r.o.
 #  Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-from .core import FeatureSpec, LayerSpec, DummySpec
+from typing import Union
+
+from .core import FeatureSpec, LayerSpec, DummySpec, FeatureSpecArray
 
 __all__ = ["ggmarginal"]
 
 
-def ggmarginal(sides: str, *, size=None, layer: LayerSpec) -> FeatureSpec:
+def ggmarginal(sides: str, *, size=None, layer: Union[LayerSpec, FeatureSpecArray]) -> FeatureSpec:
     """
-    Converts a given geometry layer to a marginal layer.
+    Convert a given geometry layer to a marginal layer.
     You can add one or more marginal layers to a plot to create a marginal plot.
 
     Parameters
@@ -23,7 +25,7 @@ def ggmarginal(sides: str, *, size=None, layer: LayerSpec) -> FeatureSpec:
     layer : `LayerSpec`
         A marginal geometry layer.
         The result of calling of the `geom_xxx()` / `stat_xxx()` function.
-        Marginal plot works best with `density`,`histogram`,`boxplot`,`violin` ans `freqpoly` geometry layers.
+        Marginal plot works best with `density`,`histogram`,`boxplot`,`violin` and `freqpoly` geometry layers.
 
     Returns
     -------
@@ -39,11 +41,10 @@ def ggmarginal(sides: str, *, size=None, layer: LayerSpec) -> FeatureSpec:
     --------
     .. jupyter-execute::
         :linenos:
-        :emphasize-lines: 24
+        :emphasize-lines: 23
 
         import numpy as np
         from lets_plot import *
-        from lets_plot.mapping import as_discrete
         LetsPlot.setup_html()
         LetsPlot.set_theme(theme_light())
 
@@ -72,16 +73,26 @@ def ggmarginal(sides: str, *, size=None, layer: LayerSpec) -> FeatureSpec:
         raise TypeError("'sides' must be a string.")
     if not 0 < len(sides) <= 4:
         raise ValueError("'sides' must be a string containing 1 to 4 chars: 'l','r','t','b'.")
-    if not isinstance(layer, LayerSpec):
+
+    # In some cases (only boxplot so far) a layer may consist of multiple sub-layers of type LayerSpec.
+    if isinstance(layer, LayerSpec):
+        sublayers = [layer]
+    elif isinstance(layer, FeatureSpecArray):
+        for sublayer in layer.elements():
+            if not isinstance(sublayer, LayerSpec):
+                raise TypeError("Invalid 'layer' type: {}".format(type(sublayer)))
+        sublayers = layer.elements()
+    else:
         raise TypeError("Invalid 'layer' type: {}".format(type(layer)))
 
     result = DummySpec()
 
-    for i in range(len(sides)):
-        side = sides[i]
-        margin_size = _to_size(size, i)
-        marginal_layer = _to_marginal(side, margin_size, layer)
-        result = result + marginal_layer
+    for sublayer in sublayers:
+        for i in range(len(sides)):
+            side = sides[i]
+            margin_size = _to_size(size, i)
+            marginal_layer = _to_marginal(side, margin_size, sublayer)
+            result = result + marginal_layer
 
     return result
 
@@ -127,7 +138,7 @@ def _to_marginal(side: str, size, layer: LayerSpec) -> LayerSpec:
             layer_kind = 'histogram'
         elif stat == 'ydensity':
             layer_kind = 'violin'
-        elif stat in ('density', 'boxplot'):
+        elif stat in ('density', 'boxplot', 'boxplot_outlier'):
             layer_kind = stat
     else:
         geom = layer_props.get('geom')
@@ -140,7 +151,7 @@ def _to_marginal(side: str, size, layer: LayerSpec) -> LayerSpec:
     if (side in ('l', 'r') and layer_kind in ('histogram', 'density', 'freqpoly')):
         auto_settings['orientation'] = 'y'
 
-    if layer_kind in ('boxplot', 'violin'):
+    if layer_kind in ('boxplot', 'boxplot_outlier', 'violin'):
         if side in ('l', 'r'):
             auto_settings['x'] = 0
         elif side in ('t', 'b'):

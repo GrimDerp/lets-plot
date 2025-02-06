@@ -2,24 +2,26 @@
 # Copyright (c) 2019. JetBrains s.r.o.
 # Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 #
-import json
 from pkgutil import extend_path
-from typing import Dict
+from typing import Dict, Union
 
 # To handle the situation when the 'lets_plot' package is shared by modules in different locations.
 __path__ = extend_path(__path__, __name__)
 
 from ._version import __version__
-from ._global_settings import _settings, is_production, get_global_bool, PLOT_THEME
+from ._global_settings import _settings, is_production, get_global_bool
 from ._global_settings import NO_JS, OFFLINE
 
 from .plot import *
 from .export import *
 from .frontend_context import *
+from .mapping import *
 from .settings_utils import *
+from .plot._global_theme import _set_global_theme
 
 __all__ = (plot.__all__ +
            frontend_context.__all__ +
+           mapping.__all__ +
            settings_utils.__all__ +
            export.__all__ +
            ['LetsPlot'])
@@ -29,7 +31,7 @@ from .frontend_context import _configuration as cfg
 
 class LetsPlot:
     """
-    Initalize the library and its options.
+    Initialize the library and its options.
     """
 
     @classmethod
@@ -39,7 +41,7 @@ class LetsPlot:
                    no_js: bool = None,
                    show_status: bool = False) -> None:
         """
-        Configures Lets-Plot HTML output.
+        Configure Lets-Plot HTML output.
         Depending on the usage, LetsPlot generates different HTML to show plots.
         In most cases LetsPlot will detect type of the environment automatically.
         Auto-detection can be overwritten using this method parameters.
@@ -106,6 +108,7 @@ class LetsPlot:
     def set(cls, settings: Dict):
         """
         Set up library options.
+        For more info see `Configuring Globally <https://lets-plot.org/python/pages/basemap_tiles.html#configuring-globally>`__.
 
         Parameters
         ----------
@@ -120,7 +123,7 @@ class LetsPlot:
         - offline : to work with notebook without the Internet connection (bool). Do not use this parameter explicitly. Instead you should call `LetsPlot.setup_html()`.
         - no_js : do not generate HTML+JS as an output (bool). Do not use this parameter explicitly. Instead you should call `LetsPlot.setup_html()`. Also note that without JS interactive maps and tooltips doesn't work!
 
-        Geocoding settings could also be specified:
+        Interactive map settings could also be specified:
 
         - maptiles_kind : kind of the tiles, could be 'raster_zxy' or 'vector_lets_plot'. Do not use this parameter explicitly. Instead you should construct it with functions `maptiles_zxy()` and `maptiles_lets_plot()`.
         - maptiles_url : address of the tile server (str). Do not use this parameter explicitly. Instead you should construct it with functions `maptiles_zxy()` and `maptiles_lets_plot()`.
@@ -133,31 +136,24 @@ class LetsPlot:
         --------
         .. jupyter-execute::
             :linenos:
-            :emphasize-lines: 3
+            :emphasize-lines: 4
 
             from lets_plot import *
+            from lets_plot import tilesets
             LetsPlot.setup_html()
-            LetsPlot.set(maptiles_lets_plot(theme='light'))
+            LetsPlot.set(tilesets.LETS_PLOT_LIGHT)
             ggplot() + geom_livemap()
 
         |
 
         .. jupyter-execute::
             :linenos:
-            :emphasize-lines: 12
+            :emphasize-lines: 4
 
             from lets_plot import *
+            from lets_plot import tilesets
             LetsPlot.setup_html()
-            attribution = '''
-            Map tiles by
-            <a href="http://stamen.com">Stamen Design</a>, under
-            <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.
-            Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under
-            <a href="http://www.openstreetmap.org/copyright">ODbL</a>
-            '''
-            tiles = maptiles_zxy(url='http://c.tile.stamen.com/terrain/{z}/{x}/{y}@2x.png',
-                                 attribution=attribution)
-            LetsPlot.set(tiles)
+            LetsPlot.set(tilesets.LETS_PLOT_BW)
             ggplot() + geom_livemap()
 
         """
@@ -167,19 +163,121 @@ class LetsPlot:
             _settings.update({'dev_' + key: value for key, value in settings.items()})
 
     @classmethod
-    def set_theme(cls, theme: 'plot.FeatureSpec'):
+    def set_theme(cls, theme: Union['core.FeatureSpec', 'core.FeatureSpecArray']):
         """
         Set up global theme.
 
         Parameters
         ----------
         theme : spec
-            Theme spec provided by `theme(...)` or `theme_xxx()` functions.
+            Theme spec provided by `theme(...)`, `theme_xxx()`, `flavor_xxx()` functions, or their sum.
 
         """
-        if theme.kind != 'theme':
-            raise ValueError("Wrong option type. Expected `theme` but was `{}`.".format(theme.kind))
+        if theme is None:
+            _set_global_theme(None)
+            return
 
-        LetsPlot.set({
-            PLOT_THEME: json.dumps(theme.as_dict())
-        })
+        if theme.kind != 'theme' and not (theme.kind == 'feature-list' and all(f.kind == 'theme' for f in theme)):
+            raise ValueError("Only `theme(...)`, `theme_xxx()`, `flavor_xxx()`, or a sum of them are supported")
+
+        _set_global_theme(theme)
+
+    @classmethod
+    def setup_show_ext(cls, *,
+                       exec: str = None,
+                       new: bool = False) -> None:
+        """
+        Configure Lets-Plot to show its HTML output in an external browser.
+
+        When the "show externally" is set up, an invocation of `figire.show()` will
+        - generate HTML output
+        - save it to a temporary file
+        - open the file in the default web browser or in a web browser specified by the `exec` parameter.
+
+        Parameters
+        ----------
+        exec : str, optional
+            Specify an app to open the generated temporary HTML file.
+            If not specified, the default browser will be used.
+        new : bool, default=False
+            If True, the URL is opened in a new window of the web browser.
+            If False, the URL is opened in the already opened web browser window.
+            The `new` parameter is only applicable when the `exec` parameter is not specified.
+            Please note that the `new` parameter is not supported by all web browsers and all OS-s.
+
+        Examples
+        --------
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 3
+
+            # Show the plot in the default web browser.
+            from lets_plot import *
+            LetsPlot.setup_show_ext()
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        |
+
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 3
+
+            # Show the plot in the new window of the default web browser if possible.
+            from lets_plot import *
+            LetsPlot.setup_show_ext(new=True)
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        |
+
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 4
+
+            # Show the plot in the Chrome web browser for Windows.
+            # This is the default setup path. Replace the file path with your own if it differs.
+            from lets_plot import *
+            LetsPlot.setup_show_ext(exec='C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe --app=%s')
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        |
+
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 3
+
+            # Show the plot in the Safari web browser for macOS.
+            from lets_plot import *
+            LetsPlot.setup_show_ext(exec='open -a safari %s')
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        |
+
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 4
+
+            # Show the plot in the Chrome web browser for macOS in the application mode.
+            # This is the default setup path. Replace the path with your own if it differs.
+            from lets_plot import *
+            LetsPlot.setup_show_ext(exec='/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --app=%s')
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        |
+
+        .. code-block::
+            :linenos:
+            :emphasize-lines: 3
+
+            # Show the plot in the Chrome web browser for Linux.
+            from lets_plot import *
+            LetsPlot.setup_show_ext(exec='google-chrome --app=%s')
+            p = ggplot() + geom_point(x=0, y=0)
+            p.show()
+
+        """
+        cfg._setup_wb_html_context(exec=exec, new=new)

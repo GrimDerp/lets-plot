@@ -2,14 +2,14 @@
 # Copyright (c) 2019. JetBrains s.r.o.
 # Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 #
-import json
 import numbers
 
-from lets_plot._global_settings import has_global_value, get_global_val, MAX_WIDTH, MAX_HEIGHT, PLOT_THEME
+from lets_plot._global_settings import has_global_value, get_global_val, MAX_WIDTH, MAX_HEIGHT
 from lets_plot.geo_data_internals.utils import is_geocoder
+from lets_plot.plot._global_theme import _get_global_theme
 from lets_plot.plot.core import FeatureSpec
 from lets_plot.plot.core import PlotSpec
-from lets_plot.plot.util import as_annotated_data
+from lets_plot.plot.util import as_annotated_data, key_int2str
 
 __all__ = ['ggplot', 'ggsize', 'GGBunch']
 
@@ -20,7 +20,7 @@ def ggplot(data=None, mapping=None):
 
     Parameters
     ----------
-    data : dict or `DataFrame`
+    data : dict or Pandas or Polars `DataFrame`
         Default dataset to use for the plot. If not specified,
         must be supplied in each layer added to the plot.
     mapping : `FeatureSpec`
@@ -83,14 +83,14 @@ def ggplot(data=None, mapping=None):
     if is_geocoder(data):
         data = data.get_geocodes()
 
+    data = key_int2str(data)
+
     data, mapping, data_meta = as_annotated_data(data, mapping)
 
     plot_spec = PlotSpec(data, mapping, scales=[], layers=[], **data_meta)
 
-    if has_global_value(PLOT_THEME):
-        theme_options = json.loads(get_global_val(PLOT_THEME))
-        theme_name = theme_options.pop('name', None)
-        plot_spec += FeatureSpec('theme', theme_name, **theme_options)
+    if _get_global_theme() is not None:
+        plot_spec += _get_global_theme()
 
     return plot_spec
 
@@ -142,6 +142,9 @@ def ggsize(width, height):
 
 class GGBunch(FeatureSpec):
     """
+    Class `GGBunch` is deprecated and will be removed in future releases.
+    Please, use function `ggbunch()` to combine several plots into a single figure with custom layout.
+
     Collection of plots created by ggplot function.
     Use method `add_plot()` to add plot to 'bunch'.
     Each plot can have arbitrary location and size.
@@ -176,6 +179,10 @@ class GGBunch(FeatureSpec):
         """
         super().__init__('ggbunch', None)
         self.items = []
+        print("\n(!) WARN: class GGBunch is deprecated and will be removed in future releases.\n\n"
+              "  Please, use function ggbunch() to combine several plots into\n"
+              "  a single figure with custom layout.\n")
+
 
     def add_plot(self, plot_spec: PlotSpec, x, y, width=None, height=None):
         """

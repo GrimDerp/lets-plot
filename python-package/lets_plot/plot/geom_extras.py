@@ -24,7 +24,7 @@ def arrow(angle=None, length=None, ends=None, type=None):
         Indicating which ends of the line to draw arrow heads.
     type : {'open', 'closed'}
         Indicating whether the arrow head should be a closed triangle.
-        
+
     Returns
     -------
     `FeatureSpec`

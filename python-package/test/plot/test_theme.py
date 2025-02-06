@@ -6,7 +6,7 @@ from lets_plot import element_blank
 from lets_plot import element_rect
 from lets_plot.plot import theme
 from lets_plot.plot.geom import _geom
-from lets_plot.plot.theme_set import theme_classic
+from lets_plot.plot.theme_set import theme_classic, flavor_darcula, flavor_solarized_dark
 
 
 def test_theme_options_should_be_merged():
@@ -49,8 +49,20 @@ def test_named_theme_is_modified_by_theme():
     assert 'bottom' == spec.as_dict()['theme']['legend_position']
 
 
-def test_element_values_merged():
+def test_plot_theme_element_values_merged():
     spec = (gg.ggplot() + _geom('foo')
+            + theme(panel_background=element_rect(color='a', fill='b'))
+            + theme(panel_background=element_rect(color='c', size=1)))
+
+    rect = spec.props()['theme']['panel_background']
+    assert isinstance(rect, dict)
+    assert 'c' == rect['color']
+    assert 'b' == rect['fill']
+    assert 1 == rect['size']
+
+
+def test_gggrid_theme_element_values_merged():
+    spec = (gg.gggrid(plots=[gg.ggplot() + _geom('foo')])
             + theme(panel_background=element_rect(color='a', fill='b'))
             + theme(panel_background=element_rect(color='c', size=1)))
 
@@ -82,6 +94,39 @@ def test_global_theme_overriding():
     assert 'top' == spec.as_dict()['theme']['legend_position']
 
 
+def test_global_theme_feature_add():
+    gg.LetsPlot.set_theme(
+        theme_classic() + flavor_darcula() + theme(legend_position='bottom')
+    )
+
+    spec = gg.ggplot() + _geom('foo')
+    expected_theme = {
+        'name': 'classic',
+        'flavor': 'darcula',
+        'legend_position': 'bottom'
+    }
+
+    assert expected_theme == spec.as_dict()['theme']
+
+
+def test_global_theme_feature_add_for_gggrid():
+    gg.LetsPlot.set_theme(
+        theme_classic() + flavor_darcula() + theme(legend_position='bottom')
+    )
+
+    spec_foo = gg.ggplot() + _geom('foo')
+    spec_bar = gg.ggplot() + _geom('bar')
+    spec = gg.gggrid([spec_foo, spec_bar])
+
+    expected_theme = {
+        'name': 'classic',
+        'flavor': 'darcula',
+        'legend_position': 'bottom'
+    }
+
+    assert expected_theme == spec.as_dict()['theme']
+
+
 def test_overriding_global_named_theme():
     gg.LetsPlot.set_theme(
         theme_classic()
@@ -100,3 +145,47 @@ def test_overriding_global_theme_with_named():
     spec = gg.ggplot() + _geom('foo') + theme_classic()
 
     assert 'legend_position' not in spec.as_dict()['theme']
+
+
+def test_named_theme_not_override_the_flavor():
+    spec = gg.ggplot() + _geom('foo') + flavor_darcula() + theme_classic()
+    expected_theme = {
+        'name': 'classic',
+        'flavor': 'darcula'
+    }
+    assert expected_theme == spec.as_dict()['theme']
+
+
+def test_append_flavor_to_named_theme():
+    spec = gg.ggplot() + _geom('foo') + theme_classic() + flavor_darcula()
+    expected_theme = {
+        'name': 'classic',
+        'flavor': 'darcula'
+    }
+    assert expected_theme == spec.as_dict()['theme']
+
+
+def test_use_the_last_specified_flavor():
+    spec = gg.ggplot() + _geom('foo') + flavor_solarized_dark() + flavor_darcula()
+
+    assert 'darcula' == spec.as_dict()['theme']['flavor']
+
+
+def test_global_flavor_not_override_with_named_theme():
+    gg.LetsPlot.set_theme(
+        flavor_darcula()
+    )
+
+    spec = gg.ggplot() + _geom('foo') + theme_classic()
+
+    assert 'darcula' == spec.as_dict()['theme']['flavor']
+
+
+def test_global_named_theme_not_override_the_flavor():
+    gg.LetsPlot.set_theme(
+        theme_classic()
+    )
+
+    spec = gg.ggplot() + _geom('foo') + flavor_darcula()
+
+    assert 'darcula' == spec.as_dict()['theme']['flavor']

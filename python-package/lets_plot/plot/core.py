@@ -2,16 +2,17 @@
 # Copyright (c) 2019. JetBrains s.r.o.
 # Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 #
+import io
 import json
+import os
+from typing import Union
 
 __all__ = ['aes', 'layer']
-
-from typing import Optional
 
 from lets_plot._global_settings import get_global_bool, has_global_value, FRAGMENTS_ENABLED
 
 
-def aes(x=None, y=None, **other):
+def aes(x=None, y=None, **kwargs):
     """
     Define aesthetic mappings.
 
@@ -28,7 +29,7 @@ def aes(x=None, y=None, **other):
 
     Notes
     -----
-    Generates aesthetic mappings that describe how variables in the data are projected to visual properties
+    Generate aesthetic mappings that describe how variables in the data are projected to visual properties
     (aesthetics) of geometries. This function also standardizes aesthetic names by, for example, converting
     colour to color.
 
@@ -68,7 +69,7 @@ def aes(x=None, y=None, **other):
 
     """
 
-    return FeatureSpec('mapping', name=None, x=x, y=y, **other)
+    return FeatureSpec('mapping', name=None, x=x, y=y, **kwargs)
 
 
 def layer(geom=None, stat=None, data=None, mapping=None, position=None, **kwargs):
@@ -82,11 +83,11 @@ def layer(geom=None, stat=None, data=None, mapping=None, position=None, **kwargs
     stat : str, default='identity'
         The statistical transformation to use on the data for this layer, as a string.
         Supported transformations: 'identity' (leaves the data unchanged),
-        'count' (counts number of points with same x-axis coordinate),
-        'bin' (counts number of points with x-axis coordinate in the same bin),
-        'smooth' (performs smoothing - linear default),
-        'density' (computes and draws kernel density estimate).
-    data : dict or `DataFrame`
+        'count' (count number of points with same x-axis coordinate),
+        'bin' (count number of points with x-axis coordinate in the same bin),
+        'smooth' (perform smoothing - linear default),
+        'density' (compute and draw kernel density estimate).
+    data : dict or Pandas or Polars `DataFrame`
         The data to be displayed in this layer. If None, the default, the data
         is inherited from the plot data as specified in the call to ggplot.
     mapping : `FeatureSpec`
@@ -94,8 +95,9 @@ def layer(geom=None, stat=None, data=None, mapping=None, position=None, **kwargs
         Aesthetic mappings describe the way that variables in the data are
         mapped to plot "aesthetics".
     position : str or `FeatureSpec`
-        Position adjustment, either as a string ('identity', 'stack', 'dodge', ...),
-        or the result of a call to a position adjustment function.
+        Position adjustment.
+        Either a position adjustment name: 'dodge', 'dodgev', 'jitter', 'nudge', 'jitterdodge', 'fill',
+        'stack' or 'identity', or the result of calling a position adjustment function (e.g., `position_dodge()` etc.).
     kwargs:
         Other arguments passed on to layer. These are often aesthetics settings, used to set an aesthetic to a fixed
         value, like color = "red", fill = "blue", size = 3 or shape = 21. They may also be parameters to the
@@ -160,7 +162,7 @@ class FeatureSpec():
 
     Do not use this class explicitly.
 
-    Instead you should construct its objects with functions `ggplot()`, `geom_point()`,
+    Instead, you should construct its objects with functions `ggplot()`, `geom_point()`,
     `position_dodge()`, `scale_x_continuous()` etc.
     """
 
@@ -173,31 +175,11 @@ class FeatureSpec():
         self.__props.update(**kwargs)
 
     def props(self):
-        """
-        Returns the dictionary of all properties of the object in their initial form.
-
-        Returns
-        -------
-        dict
-            Dictionary of properties.
-
-        Examples
-        --------
-        .. jupyter-execute::
-            :linenos:
-            :emphasize-lines: 4
-
-            from lets_plot import *
-            LetsPlot.setup_html()
-            p = ggplot({'x': [0], 'y': [0]}) + geom_point(aes('x', 'y'))
-            p.props()
-
-        """
         return self.__props
 
     def as_dict(self):
         """
-        Returns the dictionary of all properties of the object with `as_dict()`
+        Return the dictionary of all properties of the object with `as_dict()`
         applied recursively to all subproperties of `FeatureSpec` type.
 
         Returns
@@ -226,16 +208,16 @@ class FeatureSpec():
             # nothing
             return self
 
-        """
-            self + plot -> fail
-            self + other_feature -> [self,other_feature]
-        """
-        if isinstance(other, PlotSpec):
-            # pass and fail
+        if self.kind in ["plot", "subplots"]:
+            # pass and fail: don't allow to add plot to a feature list.
             pass
-        if isinstance(other, FeatureSpec):
-            arr = FeatureSpecArray(self, other)
-            return arr
+        elif isinstance(other, FeatureSpec):
+            if other.kind in ["plot", "subplots"]:
+                # pass and fail: don't allow to add plot to a feature list.
+                pass
+            else:
+                arr = FeatureSpecArray(self, other)
+                return arr
 
         raise TypeError('unsupported operand type(s) for +: {} and {}'
                         .format(self.__class__, other.__class__))
@@ -247,7 +229,7 @@ class PlotSpec(FeatureSpec):
 
     Do not use this class explicitly.
 
-    Instead you should construct its objects with functions `ggplot()`,
+    Instead, you should construct its objects with functions `ggplot()`,
     `corr_plot(...).points().build()` etc.
     """
 
@@ -264,7 +246,8 @@ class PlotSpec(FeatureSpec):
         dup.props().update(other.props())
         return dup
 
-    def __init__(self, data, mapping, scales, layers, metainfo_list=[], is_livemap=False, crs_initialized=False, crs=None, **kwargs):
+    def __init__(self, data, mapping, scales, layers, metainfo_list=[], is_livemap=False, crs_initialized=False,
+                 crs=None, **kwargs):
         """Initialize self."""
         super().__init__('plot', name=None, data=data, mapping=mapping, **kwargs)
         self.__scales = list(scales)
@@ -276,7 +259,7 @@ class PlotSpec(FeatureSpec):
 
     def get_plot_shared_data(self):
         """
-        Extracts the data shared by all layers.
+        Extract the data shared by all layers.
 
         Returns
         -------
@@ -301,7 +284,7 @@ class PlotSpec(FeatureSpec):
 
     def has_layers(self) -> bool:
         """
-        Checks if the `PlotSpec` object has at least one layer.
+        Check if the `PlotSpec` object has at least one layer.
 
         Returns
         -------
@@ -326,7 +309,7 @@ class PlotSpec(FeatureSpec):
 
     def __add__(self, other):
         """
-        Allows to add different specs to the `PlotSpec` object.
+        Allow to add different specs to the `PlotSpec` object.
 
         Examples
         --------
@@ -371,7 +354,8 @@ class PlotSpec(FeatureSpec):
                         or is_geo_data_frame(other.props().get('map')):
                     if plot.__crs_initialized:
                         if plot.__crs != other.props().get('use_crs'):
-                            raise ValueError('All geoms with map parameter should either use same `use_crs` or not use it at all')
+                            raise ValueError(
+                                'All geoms with map parameter should either use same `use_crs` or not use it at all')
                     else:
                         plot.__crs_initialized = True
                         plot.__crs = other.props().get('use_crs')
@@ -390,7 +374,11 @@ class PlotSpec(FeatureSpec):
             if other.kind == 'theme':
                 new_theme_options = {k: v for k, v in other.props().items() if v is not None}
                 if 'name' in new_theme_options:
-                    # pre-configured theme overrides existing theme all together.
+                    # keep the previously specified flavor
+                    if plot.props().get('theme', {}).get('flavor', None) is not None:
+                        new_theme_options.update({'flavor': plot.props()['theme']['flavor']})
+
+                    # pre-configured theme overrides existing theme altogether.
                     plot.props()['theme'] = new_theme_options
                 else:
                     # merge themes
@@ -406,6 +394,17 @@ class PlotSpec(FeatureSpec):
             if isinstance(other, FeatureSpecArray):
                 for spec in other.elements():
                     plot = plot.__add__(spec)
+                return plot
+
+            if other.kind == 'guides':
+                existing_options = plot.props().get('guides', {})
+                plot.props()['guides'] = _merge_dicts_recursively(existing_options, other.as_dict())
+                return plot
+
+            if other.kind == 'mapping':  # +aes(..)
+                existing_spec = plot.props().get('mapping', aes())
+                merged_mapping = {**existing_spec.as_dict(), **other.as_dict()}
+                plot.props()['mapping'] = aes(**merged_mapping)
                 return plot
 
             # add feature to properties
@@ -452,7 +451,7 @@ class PlotSpec(FeatureSpec):
 
     def show(self):
         """
-        Draws a plot.
+        Draw a plot.
 
         Examples
         --------
@@ -469,6 +468,201 @@ class PlotSpec(FeatureSpec):
         from ..frontend_context._configuration import _display_plot
         _display_plot(self)
 
+    def to_svg(self, path=None) -> str:
+        """
+        Export the plot in SVG format.
+
+        Parameters
+        ----------
+        self : `PlotSpec`
+            Plot specification to export.
+        path : str, file-like object, default=None
+            Сan be either a string specifying a file path or a file-like object.
+            If a string is provided, the result will be exported to the file at that path.
+            If a file-like object is provided, the result will be exported to that object.
+            If None is provided, the result will be returned as a string.
+
+        Returns
+        -------
+        str
+            Absolute pathname of created file,
+            SVG content as a string or None if a file-like object is provided.
+
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 9
+
+            import numpy as np
+            import io
+            from lets_plot import *
+            from IPython import display
+            LetsPlot.setup_html()
+            x = np.random.randint(10, size=100)
+            p = ggplot({'x': x}, aes(x='x')) + geom_bar()
+            file_like = io.BytesIO()
+            p.to_svg(file_like)
+            display.SVG(file_like.getvalue())
+        """
+        return _to_svg(self, path)
+
+    def to_html(self, path=None, iframe: bool = None) -> str:
+        """
+        Export the plot in HTML format.
+
+        Parameters
+        ----------
+        self : `PlotSpec`
+            Plot specification to export.
+        path : str, file-like object, default=None
+            Сan be either a string specifying a file path or a file-like object.
+            If a string is provided, the result will be exported to the file at that path.
+            If a file-like object is provided, the result will be exported to that object.
+            If None is provided, the result will be returned as a string.
+        iframe : bool, default=False
+            Whether to wrap HTML page into a iFrame.
+
+        Returns
+        -------
+        str
+            Absolute pathname of created file,
+            HTML content as a string or None if a file-like object is provided.
+
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 8
+
+            import numpy as np
+            import io
+            from lets_plot import *
+            LetsPlot.setup_html()
+            x = np.random.randint(10, size=100)
+            p = ggplot({'x': x}, aes(x='x')) + geom_bar()
+            file_like = io.BytesIO()
+            p.to_html(file_like)
+        """
+        return _to_html(self, path, iframe)
+
+    def to_png(self, path, scale: float = None, w=None, h=None, unit=None, dpi=None) -> str:
+        """
+        Export a plot to a file or to a file-like object in PNG format.
+
+        Parameters
+        ----------
+        self : `PlotSpec`
+            Plot specification to export.
+        path : str, file-like object
+            Сan be either a string specifying a file path or a file-like object.
+            If a string is provided, the result will be exported to the file at that path.
+            If a file-like object is provided, the result will be exported to that object.
+        scale : float
+            Scaling factor for raster output. Default value is 2.0.
+        w : float, default=None
+            Width of the output image in units.
+            Only applicable when exporting to PNG or PDF.
+        h : float, default=None
+            Height of the output image in units.
+            Only applicable when exporting to PNG or PDF.
+        unit : {'in', 'cm', 'mm'}, default=None
+            Unit of the output image. One of: 'in', 'cm', 'mm'.
+            Only applicable when exporting to PNG or PDF.
+        dpi : int, default=None
+            Resolution in dots per inch.
+            Only applicable when exporting to PNG or PDF.
+
+        Returns
+        -------
+        str
+            Absolute pathname of created file or None if a file-like object is provided.
+
+        Notes
+        -----
+        Export to PNG file uses the CairoSVG library.
+        CairoSVG is free and distributed under the LGPL-3.0 license.
+        For more details visit: https://cairosvg.org/documentation/
+
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 9
+
+            import numpy as np
+            import io
+            from lets_plot import *
+            from IPython import display
+            LetsPlot.setup_html()
+            x = np.random.randint(10, size=100)
+            p = ggplot({'x': x}, aes(x='x')) + geom_bar()
+            file_like = io.BytesIO()
+            p.to_png(file_like)
+            display.Image(file_like.getvalue())
+        """
+        return _export_as_raster(self, path, scale, 'png', w=w, h=h, unit=unit, dpi=dpi)
+
+    def to_pdf(self, path, scale: float = None, w=None, h=None, unit=None, dpi=None) -> str:
+        """
+        Export a plot to a file or to a file-like object in PDF format.
+
+        Parameters
+        ----------
+        self : `PlotSpec`
+            Plot specification to export.
+        path : str, file-like object
+            Сan be either a string specifying a file path or a file-like object.
+            If a string is provided, the result will be exported to the file at that path.
+            If a file-like object is provided, the result will be exported to that object.
+        scale : float
+            Scaling factor for raster output. Default value is 2.0.
+        w : float, default=None
+            Width of the output image in units.
+            Only applicable when exporting to PNG or PDF.
+        h : float, default=None
+            Height of the output image in units.
+            Only applicable when exporting to PNG or PDF.
+        unit : {'in', 'cm', 'mm'}, default=None
+            Unit of the output image. One of: 'in', 'cm', 'mm'.
+            Only applicable when exporting to PNG or PDF.
+        dpi : int, default=None
+            Resolution in dots per inch.
+            Only applicable when exporting to PNG or PDF.
+
+        Returns
+        -------
+        str
+            Absolute pathname of created file or None if a file-like object is provided.
+
+        Notes
+        -----
+        Export to PDF file uses the CairoSVG library.
+        CairoSVG is free and distributed under the LGPL-3.0 license.
+        For more details visit: https://cairosvg.org/documentation/
+
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 13
+
+            import numpy as np
+            import io
+            import os
+            from lets_plot import *
+            from IPython import display
+            LetsPlot.setup_html()
+            n = 60
+            np.random.seed(42)
+            x = np.random.choice(list('abcde'), size=n)
+            y = np.random.normal(size=n)
+            p = ggplot({'x': x, 'y': y}, aes(x='x', y='y')) + geom_jitter()
+            file_like = io.BytesIO()
+            p.to_pdf(file_like)
+        """
+        return _export_as_raster(self, path, scale, 'pdf', w=w, h=h, unit=unit, dpi=dpi)
+
 
 class LayerSpec(FeatureSpec):
     """
@@ -476,7 +670,7 @@ class LayerSpec(FeatureSpec):
 
     Do not use this class explicitly.
 
-    Instead you should construct its objects with functions `geom_point()`,
+    Instead, you should construct its objects with functions `geom_point()`,
     `geom_contour()`, `geom_boxplot()`, `geom_text()` etc.
     """
 
@@ -512,7 +706,7 @@ class LayerSpec(FeatureSpec):
                 map_data_meta = {'georeference': {}}
             else:
                 # Fetch proper GeoDataFrame. Further processing is the same as if map was a GDF.
-                if name in ['point', 'text', 'livemap']:
+                if name in ['point', 'pie', 'text', 'livemap']:
                     map = map.get_centroids()
                 elif name in ['map', 'polygon']:
                     map = map.get_boundaries()
@@ -522,7 +716,10 @@ class LayerSpec(FeatureSpec):
                     raise ValueError("Geocoding doesn't provide geometries for geom_{}".format(name))
 
         if is_geo_data_frame(map):
-            map = geo_data_frame_to_crs(map, self.props().get('use_crs'))
+            # map = geo_data_frame_to_crs(map, self.props().get('use_crs'))
+            use_crs = self.props().get('use_crs')
+            if use_crs != "provided":
+                map = geo_data_frame_to_crs(map, use_crs)
             map_join = auto_join_geo_names(map_join, map)
             map_data_meta = get_geo_data_frame_meta(map)
 
@@ -560,7 +757,17 @@ class LayerSpec(FeatureSpec):
 class FeatureSpecArray(FeatureSpec):
     def __init__(self, *features):
         super().__init__('feature-list', name=None)
-        self.__elements = list(features)
+        self.__elements = []
+        self._flatten(list(features), self.__elements)
+
+    def __len__(self):
+        return len(self.__elements)
+
+    def __iter__(self):
+        return self.__elements.__iter__()
+
+    def __getitem__(self, item):
+        return self.__elements[item]
 
     def elements(self):
         return self.__elements
@@ -588,6 +795,13 @@ class FeatureSpecArray(FeatureSpec):
 
         return super().__add__(other)
 
+    def _flatten(self, features, out):
+        for feature in features:
+            if isinstance(feature, FeatureSpecArray):
+                self._flatten(feature.elements(), out)
+            else:
+                out.append(feature)
+
 
 class DummySpec(FeatureSpec):
     def __init__(self):
@@ -606,6 +820,16 @@ def _generate_data(size):
     return PlotSpec(data='x' * size, mapping=None, scales=[], layers=[])
 
 
+def _merge_dicts_recursively(d1, d2):
+    merged = d1.copy()
+    for key, value in d2.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge_dicts_recursively(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def _theme_dicts_merge(x, y):
     """
     Simple values in `y` override values in `x`.
@@ -614,3 +838,106 @@ def _theme_dicts_merge(x, y):
     overlapping_keys = x.keys() & y.keys()
     z = {k: {**x[k], **y[k]} for k in overlapping_keys if type(x[k]) is dict and type(y[k]) is dict}
     return {**x, **y, **z}
+
+
+def _to_svg(spec, path) -> Union[str, None]:
+    from .. import _kbridge as kbr
+
+    svg = kbr._generate_svg(spec.as_dict())
+    if path is None:
+        return svg
+    elif isinstance(path, str):
+        abspath = _makedirs(path)
+        with io.open(abspath, mode="w", encoding="utf-8") as f:
+            f.write(svg)
+            return abspath
+    else:
+        path.write(svg.encode())
+        return None
+
+
+def _to_html(spec, path, iframe: bool) -> Union[str, None]:
+    if iframe is None:
+        iframe = False
+
+    from .. import _kbridge as kbr
+    html_page = kbr._generate_static_html_page(spec.as_dict(), iframe)
+
+    if path is None:
+        return html_page
+    elif isinstance(path, str):
+        abspath = _makedirs(path)
+        with io.open(abspath, mode="w", encoding="utf-8") as f:
+            f.write(html_page)
+            return abspath
+    else:
+        path.write(html_page.encode())
+        return None
+
+
+def _export_as_raster(spec, path, scale: float, export_format: str, w=None, h=None, unit=None, dpi=None) -> Union[
+    str, None]:
+    try:
+        import cairosvg
+    except ImportError:
+        import sys
+        print("\n"
+              "To export Lets-Plot figure to a PNG or PDF file please install CairoSVG library"
+              "to your Python environment.\n"
+              "CairoSVG is free and distributed under the LGPL-3.0 license.\n"
+              "For more details visit: https://cairosvg.org/documentation/\n", file=sys.stderr)
+        return None
+
+    if export_format.lower() == 'png':
+        export_function = cairosvg.svg2png
+    elif export_format.lower() == 'pdf':
+        export_function = cairosvg.svg2pdf
+    else:
+        raise ValueError("Unknown export format: {}".format(export_format))
+
+    from .. import _kbridge
+    # Use SVG image-rendering style as Cairo doesn't support CSS image-rendering style,
+    svg = _kbridge._generate_svg(spec.as_dict(), use_css_pixelated_image_rendering=False)
+
+    if isinstance(path, str):
+        abspath = _makedirs(path)
+        result = abspath
+    else:
+        result = None  # file-like object is provided. No path to return.
+
+    if any(it is not None for it in [w, h, unit, dpi]):
+        if w is None or h is None or unit is None or dpi is None:
+            raise ValueError("w, h, unit, and dpi must all be specified")
+
+        w, h = _to_inches(w, unit) * dpi, _to_inches(h, unit) * dpi
+        export_function(bytestring=svg, write_to=path, dpi=dpi, output_width=w, output_height=h)
+    else:
+        scale = scale if scale is not None else 2.0
+        export_function(bytestring=svg, write_to=path, scale=scale)
+
+    return result
+
+
+def _makedirs(path: str) -> str:
+    """Return absolute path to a file after creating all directories in the path."""
+    abspath = os.path.abspath(path)
+    dirname = os.path.dirname(abspath)
+    if dirname and not os.path.exists(dirname):
+        os.makedirs(dirname)
+    return abspath
+
+
+def _to_inches(size, size_unit):
+    if size_unit is None:
+        raise ValueError("Unit must be specified")
+
+    if size_unit == 'in':
+        inches = size
+    elif size_unit == 'cm':
+        inches = size / 2.54
+    elif size_unit == 'mm':
+        inches = size / 25.4
+    else:
+        raise ValueError("Unknown unit: {}. Expected one of: 'in', 'cm', 'mm'".format(size_unit))
+
+    return inches

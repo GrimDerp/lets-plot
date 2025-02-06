@@ -7,7 +7,7 @@ import lets_plot as gg
 
 
 # noinspection SpellCheckingInspection
-def test_ggsize():
+def test_ggplot_ggsize():
     spec = gg.ggplot() + gg.ggsize(5, 10)
     assert spec.as_dict() == {'kind': 'plot',
                               'ggsize': {'height': 10, 'width': 5},

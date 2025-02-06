@@ -5,7 +5,7 @@
 """Correlation matrix implementation module"""
 from typing import Any
 
-from lets_plot.plot.util import is_data_frame
+from lets_plot.plot.util import is_pandas_data_frame
 
 try:
     import numpy
@@ -23,7 +23,7 @@ __all__ = ['corr_plot']
 
 
 def _is_corr_matrix(data: Any):
-    if is_data_frame(data):
+    if is_pandas_data_frame(data):
         if data.shape[0] != data.shape[1]:
             return False
 
@@ -67,6 +67,11 @@ def _is_corr_matrix(data: Any):
 class corr_plot:
     """
     This class is intended to build correlation matrix plot.
+
+    Notes
+    -----
+    To hide axis tooltips, set 'blank' or the result of `element_blank()`
+    to the `axis_tooltip`, `axis_tooltip_x` or `axis_tooltip_y` parameter of the `theme()`.
 
     Examples
     --------
@@ -141,9 +146,9 @@ class corr_plot:
         """
         Parameters
         ----------
-        data : dict or `DataFrame`
+        data : dict or Pandas or Polars `DataFrame`
             Correlation matrix or data (correlation will be calculated for each variable pair).
-            data will be recognized as correlation matrix if it has a square shape and all values are
+            Data will be recognized as correlation matrix if it has a square shape and all values are
             in range -1.0..+1.0 or NaN.
         show_legend : bool, default=True
             If True legend is shown.
@@ -151,7 +156,7 @@ class corr_plot:
             If True the y axis is flipped.
         threshold : float, default=0.0
             Minimal correlation abs value to be included in result.
-            Accepts values between 0 and 1.
+            Accept values between 0 and 1.
 
         """
 
@@ -204,7 +209,9 @@ class corr_plot:
             If True, then absolute value of correlation is mapped to text size.
             If False - the text size is constant. Default - contextual.
         color : str
-            Set text color. Default - contextual.
+            Set text color.
+            For more info see `Color and Fill <https://lets-plot.org/python/pages/aesthetics.html#color-and-fill>`__.
+            Default - contextual.
 
         Returns
         -------
@@ -418,8 +425,8 @@ class corr_plot:
         if _is_corr_matrix(data):
             coefficients = True
         else:
-            if is_data_frame(data):
-                data = data.corr()
+            if is_pandas_data_frame(data):
+                data = data.corr(numeric_only=True)
                 coefficients = True
             else:
                 coefficients = False

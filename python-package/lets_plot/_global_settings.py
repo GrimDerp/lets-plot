@@ -45,7 +45,6 @@ JS_NAME = 'js_name'
 JS_URL_MANUAL = 'js_url_manual'
 MAX_WIDTH = 'max_width'
 MAX_HEIGHT = 'max_height'
-PLOT_THEME = 'plot_theme'
 
 MAPTILES_KIND = 'maptiles_kind'
 MAPTILES_URL = 'maptiles_url'
@@ -63,7 +62,7 @@ GEOCODING_ROUTE = '/map_data/geocoding'
 FRAGMENTS_ENABLED = 'fragments_enabled'
 
 _DATALORE_TILES_SERVICE = 'wss://tiles.datalore.jetbrains.com'
-_DATALORE_TILES_ATTRIBUTION = 'Map: <a href="https://github.com/JetBrains/lets-plot">\u00a9 Lets-Plot</a>, map data: <a href="https://www.openstreetmap.org/copyright">\u00a9 OpenStreetMap contributors</a>.'
+_DATALORE_TILES_ATTRIBUTION = '<a href="https://lets-plot.org">\u00a9 Lets-Plot</a>, map data: <a href="https://www.openstreetmap.org/copyright">\u00a9 OpenStreetMap contributors</a>.'
 _DATALORE_TILES_THEME = 'color'
 _DATALORE_TILES_MIN_ZOOM = 1
 _DATALORE_TILES_MAX_ZOOM = 15
@@ -87,7 +86,7 @@ _settings = {
     # JS_BASE_URL: "https://cdnjs.cloudflare.com/ajax/libs/lets-plot",
     JS_BASE_URL: "https://cdn.jsdelivr.net/gh/JetBrains/lets-plot@v{version}".format(version=__version__),
     JS_PATH_TO_FILE: "js-package/distr",
-    JS_NAME: '',  # default: lets-plot-<version>.min.js
+    JS_NAME: '',  # default: lets-plot.min.js
     GEOCODING_PROVIDER_URL: _init_value(GEOCODING_PROVIDER_URL, _DATALORE_GEOCODING_SERVICE),
     MAPTILES_KIND: _init_value(MAPTILES_KIND, TILES_VECTOR_LETS_PLOT),
     MAPTILES_URL: _init_value(MAPTILES_URL, _DATALORE_TILES_SERVICE),
@@ -100,10 +99,11 @@ _settings = {
     'dev_' + NO_JS: _init_value('dev_' + NO_JS, False),
     # We don't publish "dev" version, it must be served on localhost:
     # $ cd lets-plot
+    # ./gradlew js-package:jsBrowserDevelopmentWebpack
     # $ python -m http.server 8080
     'dev_' + JS_BASE_URL: "http://127.0.0.1:8080",
-    'dev_' + JS_PATH_TO_FILE: "js-package/build/distributions",
-    'dev_' + JS_NAME: '',  # default: lets-plot-<version>.js
+    'dev_' + JS_PATH_TO_FILE: "js-package/build/dist/js/developmentExecutable",
+    'dev_' + JS_NAME: '',  # default: lets-plot.js
     'dev_' + GEOCODING_PROVIDER_URL: _init_value('dev_' + GEOCODING_PROVIDER_URL, _DATALORE_GEOCODING_SERVICE),
     'dev_' + MAPTILES_KIND: _init_value('dev_' + MAPTILES_KIND, TILES_VECTOR_LETS_PLOT),
     'dev_' + MAPTILES_URL: _init_value('dev_' + MAPTILES_URL, _DATALORE_TILES_SERVICE),
@@ -142,7 +142,7 @@ def get_js_cdn_url() -> str:
     if has_global_value(JS_NAME):
         name = get_global_str(JS_NAME)
     else:
-        name = "lets-plot.min.js" if is_production() else "lets-plot-{version}.js".format(version=__version__)
+        name = "lets-plot.min.js" if is_production() else "lets-plot.js".format(version=__version__)
         # name = "lets-plot-{version}.{suffix}".format(version=__version__, suffix=suffix)
         # name = "lets-plot.{suffix}".format(suffix=suffix)
 

@@ -1,9 +1,11 @@
 #  Copyright (c) 2020. JetBrains s.r.o.
 #  Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
+__all__ = ['as_discrete']
+
 
 class MappingMeta:
-    def __init__(self, variable, annotation, **parameters):
+    def __init__(self, variable, annotation, levels, **parameters):
         if variable is None:
             raise ValueError("variable can't be none")
 
@@ -12,12 +14,13 @@ class MappingMeta:
 
         self.variable = variable
         self.annotation = annotation
+        self.levels = levels
         self.parameters = parameters
 
 
-def as_discrete(variable, label=None, order_by=None, order=None):
+def as_discrete(variable, label=None, order_by=None, order=None, levels=None):
     """
-    The function is used to annotate a numeric data series as categorical data with the possibility of its ordering for the purposes of given visualization.
+    The function converts a column to a discrete scale and allows you to specify the order of its values.
 
     Parameters
     ----------
@@ -29,6 +32,8 @@ def as_discrete(variable, label=None, order_by=None, order=None):
         The variable name to order by.
     order : int
         The ordering direction. 1 for ascending, -1 for descending.
+    levels : list
+        The list of values that defines a specific order of categories.
 
     Returns
     -------
@@ -49,11 +54,10 @@ def as_discrete(variable, label=None, order_by=None, order=None):
     --------
     .. jupyter-execute::
         :linenos:
-        :emphasize-lines: 13
+        :emphasize-lines: 12
 
         import numpy as np
         from lets_plot import *
-        from lets_plot.mapping import as_discrete
         LetsPlot.setup_html()
         n = 100
         np.random.seed(42)
@@ -69,11 +73,10 @@ def as_discrete(variable, label=None, order_by=None, order=None):
 
     .. jupyter-execute::
         :linenos:
-        :emphasize-lines: 12
+        :emphasize-lines: 11
 
         import numpy as np
         from lets_plot import *
-        from lets_plot.mapping import as_discrete
         LetsPlot.setup_html()
         n = 100
         np.random.seed(42)
@@ -88,11 +91,10 @@ def as_discrete(variable, label=None, order_by=None, order=None):
 
     .. jupyter-execute::
         :linenos:
-        :emphasize-lines: 13-14
+        :emphasize-lines: 12-13
 
         import numpy as np
         from lets_plot import *
-        from lets_plot.mapping import as_discrete
         LetsPlot.setup_html()
         n = 100
         np.random.seed(42)
@@ -108,6 +110,6 @@ def as_discrete(variable, label=None, order_by=None, order=None):
     """
     if isinstance(variable, str):
         label = variable if label is None else label
-        return MappingMeta(variable, 'as_discrete', label=label, order_by=order_by, order=order)
+        return MappingMeta(variable, 'as_discrete', levels=levels, label=label, order_by=order_by, order=order)
     # aes(x=as_discrete([1, 2, 3])) - pass as is
     return variable

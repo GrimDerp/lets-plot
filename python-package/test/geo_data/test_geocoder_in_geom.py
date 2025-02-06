@@ -6,12 +6,11 @@ from geopandas import GeoDataFrame
 from pandas import DataFrame
 from shapely.geometry import Point, Polygon, LinearRing, MultiPolygon
 
-from lets_plot._kbridge import _standardize_plot_spec
+from geo_data_test_util import assert_error
+from lets_plot._type_utils import standardize_dict
 from lets_plot.geo_data import DF_COLUMN_CITY, DF_COLUMN_STATE, DF_COLUMN_COUNTY
 from lets_plot.geo_data.geocoder import Geocoder
-from lets_plot.plot import ggplot, geom_polygon, geom_point, geom_map, geom_rect, geom_text, geom_path, geom_livemap
-from lets_plot.plot import util
-from geo_data_test_util import get_map_data_meta, assert_error
+from lets_plot.plot import ggplot, geom_polygon, geom_point, geom_map, geom_rect, geom_text, geom_path
 
 
 def geo_data_frame(geometry, columns=[]):
@@ -24,20 +23,20 @@ def geo_data_frame(geometry, columns=[]):
 
 
 def get_map(plot_spec) -> dict:
-    return _standardize_plot_spec(plot_spec.as_dict())['layers'][0]['map']
+    return standardize_dict(plot_spec.as_dict())['layers'][0]['map']
 
 
 def get_map_join(plot_spec) -> dict:
-    return _standardize_plot_spec(plot_spec.as_dict())['layers'][0]['map_join']
+    return standardize_dict(plot_spec.as_dict())['layers'][0]['map_join']
 
 
 def get_data(plot_spec) -> dict:
-    return _standardize_plot_spec(plot_spec.as_dict())['layers'][0]['data']
+    return standardize_dict(plot_spec.as_dict())['layers'][0]['data']
 
 
 def assert_map_data_meta(plot_spec):
     expected_map_data_meta = {'geodataframe': {'geometry': 'coord'}}
-    assert expected_map_data_meta == get_map_data_meta(plot_spec, 0)
+    assert expected_map_data_meta == plot_spec.as_dict()['layers'][0]['map_data_meta']
 
 
 def test_geom_path_raises_an_error():
@@ -87,14 +86,6 @@ def test_geom_text_fetches_centroids():
     assert geocoder.get_test_point_dict() == get_map(plot_spec)
 
 
-def test_geom_livemap_fetches_centroids():
-    geocoder = mock_geocoder()
-    plot_spec = ggplot() + geom_livemap(map=geocoder, symbol='point')
-
-    assert_map_data_meta(plot_spec)
-    assert geocoder.get_test_point_dict() == get_map(plot_spec)
-
-
 def test_data_should_call_to_dataframe():
     geocoder = mock_geocoder()
     plot_spec = ggplot() + geom_map(data=geocoder)
@@ -104,7 +95,7 @@ def test_data_should_call_to_dataframe():
 
 
 def get_layer_spec(plot_spec, spec_name):
-    return _standardize_plot_spec(plot_spec.as_dict())['layers'][0].get(spec_name)
+    return standardize_dict(plot_spec.as_dict())['layers'][0].get(spec_name)
 
 
 @pytest.mark.parametrize('map_join,map_columns,expected', [
@@ -195,16 +186,20 @@ def mock_geocoder() -> 'MockGeocoder':
     point_gdf = geo_data_frame([Point(-5, 17)])
     point_dict = {'coord': ['{"type": "Point", "coordinates": [-5.0, 17.0]}']}
 
-    polygon_gdf = geo_data_frame(MultiPolygon([
+    polygon_gdf = geo_data_frame([MultiPolygon([
         Polygon(LinearRing([(11, 12), (13, 14), (15, 13), (7, 4)])),
         Polygon(LinearRing([(10, 2), (13, 10), (12, 3)]))
-    ])
+    ])]
     )
 
     polygon_dict = {
         'coord': [
-            '{"type": "Polygon", "coordinates": [[[11.0, 12.0], [13.0, 14.0], [15.0, 13.0], [7.0, 4.0], [11.0, 12.0]]]}',
-            '{"type": "Polygon", "coordinates": [[[10.0, 2.0], [13.0, 10.0], [12.0, 3.0], [10.0, 2.0]]]}'
+            '{'
+            '"type": "MultiPolygon", '
+            '"coordinates": ['
+            '[[[11.0, 12.0], [13.0, 14.0], [15.0, 13.0], [7.0, 4.0], [11.0, 12.0]]], '
+            '[[[10.0, 2.0], [13.0, 10.0], [12.0, 3.0], [10.0, 2.0]]]]'
+            '}'
         ]
     }
 

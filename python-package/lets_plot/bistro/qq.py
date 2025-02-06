@@ -10,10 +10,11 @@ def qq_plot(data=None, sample=None, *, x=None, y=None,
             distribution=None, dparams=None, quantiles=None,
             group=None,
             show_legend=None,
+            marginal=None,
             color=None, fill=None, alpha=None, size=None, shape=None,
             line_color=None, line_size=None, linetype=None) -> PlotSpec:
     """
-    Produces a Q-Q plot (quantile-quantile plot).
+    Produce a Q-Q plot (quantile-quantile plot).
 
     Supply the `sample` parameter to compare distribution of observations with a theoretical distribution
     ('normal' or as otherwise specified by the `distribution` parameter).
@@ -22,10 +23,10 @@ def qq_plot(data=None, sample=None, *, x=None, y=None,
 
     Parameters
     ----------
-    data : dict or `DataFrame`
+    data : dict or Pandas or Polars `DataFrame`
         The data to be displayed.
     sample : str
-        Name of variable. Specifies a vector of observations used for computing of "sample quantiles".
+        Name of variable specifying a vector of observations used for computing of "sample quantiles".
         Use this parameter to produce a "sample vs. theoretical" Q-Q plot.
     x, y : str
         Names of variables specifying two vectors of observations used for computing of
@@ -49,24 +50,44 @@ def qq_plot(data=None, sample=None, *, x=None, y=None,
         If it is specified and color-parameters isn't then different groups will has different colors.
     show_legend : bool, default=True
         False - do not show legend.
+    marginal : str, default='dens:tr'
+        Description of marginal layers packed to string value.
+        Different marginals are separated by the ',' char.
+        Parameters of a marginal are separated by the ':' char.
+        First parameter of a marginal is a geometry name.
+        Possible values: 'dens'/'density', 'hist'/'histogram', 'box'/'boxplot'.
+        Second parameter is a string specifying which sides of the plot the marginal layer will appear on.
+        Possible values: 't' (top), 'b' (bottom), 'l' (left), 'r' (right).
+        Third parameter (optional) is size of marginal.
+        To suppress marginals use `marginal='none'`.
+        Examples:
+        "hist:tr:0.3",
+        "dens:tr,hist:bl",
+        "box : tr : .05, dens : bl".
     color : str
         Color of a points.
+        For more info see `Color and Fill <https://lets-plot.org/python/pages/aesthetics.html#color-and-fill>`__.
     fill : str
         Color to paint shape's inner points. Is applied only to the points of shapes having inner points.
+        For more info see `Color and Fill <https://lets-plot.org/python/pages/aesthetics.html#color-and-fill>`__.
     alpha : float, default=0.5
-        Transparency level of a points. Accepts values between 0 and 1.
+        Transparency level of points. Accept values between 0 and 1.
     size : float, default=3.0
         Size of the points.
     shape : int
         Shape of the points, an integer from 0 to 25.
+        For more info see `Point Shapes <https://lets-plot.org/python/pages/aesthetics.html#point-shapes>`__.
     line_color : str, default='#FF0000'
         Color of the fitting line.
+        For more info see `Color and Fill <https://lets-plot.org/python/pages/aesthetics.html#color-and-fill>`__.
     line_size : float, default=0.75
         Width of the fitting line.
-    linetype : int or str
+    linetype : int or str or list
         Type of the fitting line.
-        Codes and names: 0 = 'blank', 1 = 'solid', 2 = 'dashed',
-        3 = 'dotted', 4 = 'dotdash', 5 = 'longdash', 6 = 'twodash.
+        Accept codes or names (0 = 'blank', 1 = 'solid', 2 = 'dashed', 3 = 'dotted', 4 = 'dotdash', 5 = 'longdash', 6 = 'twodash'),
+        a hex string (up to 8 digits for dash-gap lengths),
+        or a list pattern [offset, [dash, gap, ...]] / [dash, gap, ...].
+        For more info see `Line Types <https://lets-plot.org/python/pages/aesthetics.html#line-types>`__.
 
     Returns
     -------
@@ -80,6 +101,11 @@ def qq_plot(data=None, sample=None, *, x=None, y=None,
 
     If the two distributions being compared are similar, the points in the Q-Q plot
     will approximately lie on the straight line.
+
+    ----
+
+    To hide axis tooltips, set 'blank' or the result of `element_blank()`
+    to the `axis_tooltip`, `axis_tooltip_x` or `axis_tooltip_y` parameter of the `theme()`.
 
     Examples
     --------
@@ -169,6 +195,7 @@ def qq_plot(data=None, sample=None, *, x=None, y=None,
         'quantiles': quantiles,
         'group': group,
         'show_legend': show_legend,
+        'marginal': marginal,
         'color': color,
         'fill': fill,
         'alpha': alpha,

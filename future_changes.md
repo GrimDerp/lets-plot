@@ -1,53 +1,27 @@
-## [2.5.1] - 2022-??-??
+## [4.5.3] - 2025-mm-dd
 
 ### Added
+- `ggbunch()` function: combining plots with custom layout.
 
-- `geom_text(), geom_label()`:
+  See [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-25a/ggbunch_indonesia.ipynb).
+                                                                                                                       
+- Support for plot **title, subtitle, saption, margins** and **insets** in `gggrid()` and `ggbunch()`. 
 
-  -  the 'newline' character (`\n`) now works as `line break`  ([[#605](https://github.com/JetBrains/lets-plot/issues/605)])
-  - `lineheight` aesthetic ([[#324](https://github.com/JetBrains/lets-plot/issues/324)])
-  - `nudge_x, nudge_y` parameters ([[#324](https://github.com/JetBrains/lets-plot/issues/324)])
-  - special text alignments (`vjust` and `hjust`): `"inward"` and `"outward"` ([[#324](https://github.com/JetBrains/lets-plot/issues/324)])
+- `geom_hex()`.
 
-  See: [example notebook](https://nbviewer.jupyter.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/geom_text_new_features.ipynb).
+  See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-25a/geom_hex.ipynb).
 
-- `vjust` parameter in `position_stack()` and `position_fill()` [[#323](https://github.com/JetBrains/lets-plot/issues/323)].
-
-  See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/position_stack.ipynb).
-
-- `use_crs` parameter in `geom_map()` and other geoms, working with `GeoDataFrame`
- 
-  See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/map_use_crs.ipynb).
-
-- `geom_imshow()` (former `geom_image()`):
-
-  - `extent` parameter
-
-    See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/image_extent.ipynb).
-
-  - `vmin, vmax, cmap` parameters                    
-
-    See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/image_grayscale.ipynb).
-
-- `image_matrix()`:
-
-  - `vmin, vmax, cmap` parameters
-
-    See: [example notebook](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/image_matrix.ipynb).
-
+- `spacer` parameter in `image_matrix()`.
 
 ### Changed
 
-- `geom_image()` renamed to `geom_imshow()`
-
-  See updated examples: [image 101](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/image_101.ipynb),
-  [Fisher's boat](https://nbviewer.org/github/JetBrains/lets-plot/blob/master/docs/f-22d/image_fisher_boat.ipynb).
+- [**DEPRECATED**] class `GGBunch` is deprecated. Please use `ggbunch()` function instead.
+- Axis breaks: changed default `lower_exp_bound` to -7 and `upper_exp_bound` to 6 (same as in `theme(...)`).
 
 ### Fixed
-
-- element_blank() has no effect in theme legend_title [[#608](https://github.com/JetBrains/lets-plot/issues/608)].
-- livemap: add support of geom_label parameters [[#601](https://github.com/JetBrains/lets-plot/issues/601)].
-- Tooltip: different formats for same aesthetic Y [[#579](https://github.com/JetBrains/lets-plot/issues/579)].
-- Positioning with "constant" x/y doesn't work on axis with log10 transform [[#618](https://github.com/JetBrains/lets-plot/issues/618)].
-- Positional "constant" doesn't honor axis limits [[#619](https://github.com/JetBrains/lets-plot/issues/619)].
-- Parameter `norm` in `geom_imshow()`.
+- Tooltip should not cover and hide the geometry that it provides info for [[#1275](https://github.com/JetBrains/lets-plot/issues/1275)].
+- General purpose `scale_continuous`: can't use the `expand` parameter [[#1285](https://github.com/JetBrains/lets-plot/issues/1285)].
+- Broken `plot_background` in `gggrid` [[#1124](https://github.com/JetBrains/lets-plot/issues/1124)].
+- gggrid: allow title and other labels for the entire figure [[#715](https://github.com/JetBrains/lets-plot/issues/715)].
+- GGbunch: overall title [[#321](https://github.com/JetBrains/lets-plot/issues/321)].
+- Livemap: parameters nudge_x and nudge_y have no effect on geom_text or geom_label [[#1048](https://github.com/JetBrains/lets-plot/issues/1048)].

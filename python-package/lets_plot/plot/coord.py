@@ -10,7 +10,8 @@ from .core import FeatureSpec
 __all__ = ['coord_cartesian',
            'coord_fixed',
            'coord_map',
-           'coord_flip'
+           'coord_flip',
+           'coord_polar',
            ]
 
 
@@ -31,7 +32,7 @@ def coord_cartesian(xlim=None, ylim=None, flip=False):
         1st element defines lower limit, 2nd element defines upper limit.
         None means no lower / upper bound - depending on the index in list.
     flip : bool
-        Flips the coordinate system axisso that horizontal axis becomes vertical and vice versa.
+        Flip the coordinate system axis so that horizontal axis becomes vertical and vice versa.
 
     Returns
     -------
@@ -59,7 +60,7 @@ def coord_cartesian(xlim=None, ylim=None, flip=False):
 
 def coord_fixed(ratio=1., xlim=None, ylim=None, flip=False):
     """
-    A fixed scale coordinate system forces a specified ratio between the physical representation of data units on the axes.
+    A fixed scale coordinate system forces a specified ratio between the physical representations of data units on the axes.
 
     Parameters
     ----------
@@ -68,15 +69,15 @@ def coord_fixed(ratio=1., xlim=None, ylim=None, flip=False):
         ratio = 1, ensures that one unit on the x-axis is the same length as one unit on the y-axis.
         Ratios higher than one make units on the y-axis longer than units on the x-axis, and vice versa.
     xlim : list
-        Limits (2 numbers) for the x axis.
+        Limits (2 elements) for the x axis.
         1st element defines lower limit, 2nd element defines upper limit.
         None means no lower / upper bound - depending on the index in list.
     ylim : list
-        Limits (2 numbers) for the y axis.
+        Limits (2 elements) for the y axis.
         1st element defines lower limit, 2nd element defines upper limit.
         None means no lower / upper bound - depending on the index in list.
     flip : bool
-        Flips the coordinate system axisso that horizontal axis becomes vertical and vice versa.
+        Flip the coordinate system axis so that horizontal axis becomes vertical and vice versa.
 
     Returns
     -------
@@ -106,7 +107,7 @@ def coord_fixed(ratio=1., xlim=None, ylim=None, flip=False):
 
 def coord_map(xlim=None, ylim=None, flip=False):
     """
-    Projects a portion of the earth, which is approximately spherical,
+    Project a portion of the earth, which is approximately spherical,
     onto a flat 2D plane.
     Map projections generally do not preserve straight lines, so this requires considerable computation.
 
@@ -121,7 +122,7 @@ def coord_map(xlim=None, ylim=None, flip=False):
         1st element defines lower limit, 2nd element defines upper limit.
         None means no lower / upper bound - depending on the index in list.
     flip : bool
-        Flips the coordinate system axisso that horizontal axis becomes vertical and vice versa.
+        Flip the coordinate system axis so that horizontal axis becomes vertical and vice versa.
 
     Returns
     -------
@@ -188,6 +189,53 @@ def coord_flip(xlim=None, ylim=None):
     """
 
     return _coord('flip', xlim=xlim, ylim=ylim, flip=True)
+
+
+def coord_polar(xlim=None, ylim=None, theta=None, start=None, direction=None, transform_bkgr=None):
+    """
+    Polar coordinate system. It is used for pie charts and polar plots.
+
+    Parameters
+    ----------
+    xlim : list
+        Limits (2 elements) for the x axis.
+        1st element defines lower limit, 2nd element defines upper limit.
+        None means no lower / upper bound - depending on the index in list.
+    ylim : list
+        Limits (2 elements) for the y axis.
+        1st element defines lower limit, 2nd element defines upper limit.
+        None means no lower / upper bound - depending on the index in list.
+    theta : {'x', 'y'}, default='x'
+        Aesthetic that is used to map angle.
+    start : float, default=0
+        Offset relative to the starting angle (which is 12 o'clock), in radians.
+    direction : {1, -1}, default=1
+        Specify angle direction, 1=clockwise, -1=counter-clockwise.
+    transform_bkgr : bool, default=True
+        If True, the background is transformed to a circle, rectangle otherwise.
+
+    Examples
+    --------
+    .. jupyter-execute::
+        :linenos:
+        :emphasize-lines: 13
+
+        import numpy as np
+        from lets_plot import *
+        LetsPlot.setup_html()
+        np.random.seed(42)
+        n = 20
+        data = {
+            'v': 1 + np.random.randint(5, size=n)
+        }
+        ggplot(data) + \\
+            geom_bar(aes(fill=as_discrete('v')), size=0, show_legend=False) + \\
+            scale_x_continuous(expand=[0, 0]) + \\
+            scale_y_continuous(expand=[0, 0]) + \\
+            coord_polar(theta='y')
+
+    """
+    return _coord('polar', xlim=xlim, ylim=ylim, theta=theta, start=start, direction=direction, transform_bkgr=transform_bkgr)
 
 
 def _coord(name, **other):

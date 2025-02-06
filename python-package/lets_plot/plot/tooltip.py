@@ -87,11 +87,12 @@ class layer_tooltips(FeatureSpec):
         self._tooltip_color = None
         self._tooltip_variables = variables
         self._tooltip_title = None
+        self._disable_splitting = None
         super().__init__('tooltips', name=None)
 
     def as_dict(self):
         """
-        Returns the dictionary of all properties of the object.
+        Return the dictionary of all properties of the object.
 
         Returns
         -------
@@ -113,18 +114,19 @@ class layer_tooltips(FeatureSpec):
 
         """
         d = super().as_dict()
-        d['tooltip_formats'] = self._tooltip_formats
-        d['tooltip_lines'] = self._tooltip_lines
+        d['formats'] = self._tooltip_formats
+        d['lines'] = self._tooltip_lines
         d['tooltip_anchor'] = self._tooltip_anchor
         d['tooltip_min_width'] = self._tooltip_min_width
         d['tooltip_color'] = self._tooltip_color
-        d['tooltip_variables'] = self._tooltip_variables
-        d['tooltip_title'] = self._tooltip_title
+        d['variables'] = self._tooltip_variables
+        d['title'] = self._tooltip_title
+        d['disable_splitting'] = self._disable_splitting
         return _filter_none(d)
 
     def format(self, field=None, format=None):
         """
-        Defines the format for displaying the value.
+        Define the format for displaying the value.
         This format will be applied to the mapped value in the default tooltip
         or to the corresponding value specified in the 'line' template.
 
@@ -153,17 +155,17 @@ class layer_tooltips(FeatureSpec):
         - field='^X' - for all positional x,
         - field='^Y' - for all positional y.
 
-        |
+        ----
 
         The string template in `format` will allow to change lines
         for the default tooltip without `line` specifying.
-        Also the template will change the line for outliers.
+        Also the template will change the line for side tooltips.
         Aes and var formats are not interchangeable, i.e. var format
         will not be applied to aes, mapped to this variable.
 
-        |
+        ----
 
-        For more info see https://lets-plot.org/pages/formats.html.
+        For more info see `Formatting <https://lets-plot.org/python/pages/formats.html>`__.
 
         Examples
         --------
@@ -223,7 +225,7 @@ class layer_tooltips(FeatureSpec):
     def line(self, value):
         """
         Line to show in the tooltip.
-        Adds a line template to the tooltip with a label.
+        Add a line template to the tooltip with a label.
 
         Parameters
         ----------
@@ -248,10 +250,10 @@ class layer_tooltips(FeatureSpec):
         A '^' symbol can be escaped with a backslash, a brace character
         in the literal text - by doubling:
 
-        - 'x\^2' -> "x^2"
+        - 'x\\\\^2' -> "x^2"
         - '{{x}}' -> "{x}"
 
-        The specified 'line' for outlier will move it to the general multi-line tooltip.
+        The specified 'line' for side tooltip will move it to the general multi-line tooltip.
         The default tooltip has a label before the value,
         usually containing the name of the mapped variable.
         It has its own behaviour, like blank label for axis aesthetics.
@@ -280,7 +282,7 @@ class layer_tooltips(FeatureSpec):
                            tooltips=layer_tooltips().format('x', '.3f')\\
                                                     .line('x = @x')\\
                                                     .format('9 - x^2', '.3f')\\
-                                                    .line('9 - x\^2 = @{9 - x^2}'))
+                                                    .line('9 - x\\^2 = @{9 - x^2}'))
 
         |
 
@@ -318,7 +320,7 @@ class layer_tooltips(FeatureSpec):
 
     def anchor(self, value):
         """
-        Specifies a fixed position for a general tooltip.
+        Specify a fixed position for a general tooltip.
 
         Parameters
         ----------
@@ -399,7 +401,7 @@ class layer_tooltips(FeatureSpec):
     def title(self, value):
         """
         Line with title to show in the tooltip.
-        Adds a title template to the tooltip.
+        Add a title template to the tooltip.
 
         Parameters
         ----------
@@ -418,6 +420,67 @@ class layer_tooltips(FeatureSpec):
         The resulting string will be at the beginning of the general tooltip, centered and highlighted in bold.
         A long title can be split into multiple lines using `\\\\n` as a text separator.
 
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 15
+
+            import numpy as np
+            from lets_plot import *
+            LetsPlot.setup_html()
+            n = 100
+            np.random.seed(42)
+            data = {
+                'id': np.arange(n),
+                'x': np.random.normal(size=n),
+                'y': np.random.normal(size=n),
+                'c': np.random.choice(['a', 'b'], size=n),
+                'w': np.random.randint(1, 11, size=n)
+            }
+            ggplot(data, aes('x', 'y')) + \\
+                geom_point(aes(color='c', size='w'), show_legend=False, \\
+                           tooltips=layer_tooltips().title('@id')
+                                                    .line('color|@c')
+                                                    .line('size|@w'))
+
         """
         self._tooltip_title = value
+        return self
+
+    def disable_splitting(self):
+        """
+        Hide side tooltips.
+
+        Returns
+        -------
+        `layer_tooltips`
+            Layer tooltips specification.
+
+        Notes
+        -----
+        By default, the `disable_splitting()` function moves all side tooltips to the general tooltip.
+        If the content of a general tooltip is specified with the `line()` functions,
+        the general tooltip will get the given lines, and the side tooltips will be hidden.
+
+        Examples
+        --------
+        .. jupyter-execute::
+            :linenos:
+            :emphasize-lines: 10
+
+            import numpy as np
+            from lets_plot import *
+            LetsPlot.setup_html()
+            n = 50
+            np.random.seed(42)
+            data = {
+                'v': np.random.normal(size=n),
+                'c': np.random.choice(['a', 'b', 'c'], size=n),
+            }
+            ggplot(data, aes('c', 'v')) + \\
+                geom_boxplot(tooltips=layer_tooltips().disable_splitting())
+
+        """
+        self._disable_splitting = True
         return self
